@@ -1,23 +1,43 @@
 package com.example.demo;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.google.gson.Gson;
+
+import fr.opensagres.poi.xwpf.converter.pdf.PdfConverter;
+import fr.opensagres.poi.xwpf.converter.pdf.PdfOptions;
+
+
+
+
+
 
 
 @RestController
 public class NewSampleController {
+	
+	long i=0;
 	
 	@RequestMapping("/health")
 	public String healthCheck() {
@@ -27,12 +47,17 @@ public class NewSampleController {
 	
 	@ResponseBody
 	@RequestMapping(value = "/employees", method = RequestMethod.GET)
-	public String employees(HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees(HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
+				return "";
+			}
+				else {
 
 		List list1 = new ArrayList();
 		list1.add(1);
@@ -47,14 +72,19 @@ public class NewSampleController {
 
 	}
 	
-	
+	}
 	@RequestMapping(value = "/employees", method = RequestMethod.PUT)
-	public String employees1(@RequestParam(required = false) String id,@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees1(@RequestParam(required = false) String id,@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(200);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
+				return "";
+			}
+				else {
 		
 		Date date = new Date();
 		Timestamp ts = new Timestamp(date.getTime());
@@ -67,16 +97,22 @@ public class NewSampleController {
 	
 		  return "Data has been updated successfully";
 		
-
+				}
 	}
 	
 	@RequestMapping(value = "/employees", method = RequestMethod.POST)
-	public String employees2(@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees2(@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(201);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 		int max = 100;
 		int min = 1;
 		Random rand = new Random();
@@ -94,14 +130,21 @@ public class NewSampleController {
 		
 
 	}
+	}
 	
 	@RequestMapping(value = "/employees", method = RequestMethod.PATCH)
-	public String employees3(@RequestParam(required = false) String id,@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees3(@RequestParam(required = false) String id,@RequestParam(required = false) String name,@RequestParam(required = false) String city,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(200);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 		
 		Date date = new Date();
 		Timestamp ts = new Timestamp(date.getTime());
@@ -116,30 +159,40 @@ public class NewSampleController {
 		
 
 	}
-	
+	}
 	@RequestMapping(value = "/employees", method = RequestMethod.DELETE)
-	public String employees4(HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees4(HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(200);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
-		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		  return "Data has been deleted successfully";
 		
 
 	}
-	
+	}
 	List list = new ArrayList();
 	
 	@RequestMapping(value = "/reg", method = RequestMethod.POST)
-	public String employees5(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees5(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(201);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
+				return "";
+			}
+				else {
 
 	list.add(name);
 	list.add(email);
@@ -195,15 +248,21 @@ public class NewSampleController {
 		
 
 	}
+	}
 	
 	@RequestMapping(value = "/unreg", method = RequestMethod.POST)
-	public String employees6(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees6(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(201);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
+				return "";
+			}
+				else {
 	
 		
 		 org.json.JSONObject obj = new org.json.JSONObject();
@@ -218,9 +277,9 @@ public class NewSampleController {
 		
 
 	}
-	
+	}
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
-	public String employees7(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response) throws ClassNotFoundException, SQLException {
+	public String employees7(@RequestParam(required = false) String name,@RequestParam(required = false) String email,@RequestParam(required = false) String password,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException {
 		response.setStatus(201);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
@@ -236,18 +295,29 @@ public class NewSampleController {
 		}
 
 		  String dd = obj.toString(); */
-			
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 		  return "login successful";
 	
 
 	}
-	
+	}
 	@RequestMapping(value = "/delay", method = RequestMethod.POST)
-	public String employees8(@RequestParam(required = false) String name,@RequestParam(required = false) String email,HttpServletResponse response) throws ClassNotFoundException, SQLException, InterruptedException {
+	public String employees8(@RequestParam(required = false) String name,@RequestParam(required = false) String email,HttpServletResponse response,@RequestParam(required = false) String qparam) throws ClassNotFoundException, SQLException, InterruptedException {
 		response.setStatus(201);  
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 		org.json.JSONObject obj = new org.json.JSONObject();
 		
 		  obj.put("name", name);
@@ -257,6 +327,89 @@ public class NewSampleController {
 			
 		  return "Response delayed";
 	
+
+	}
+	}
+	@RequestMapping(value="/wordtopdf",method = RequestMethod.POST)
+	public String wordtopdf(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam,
+			HttpServletRequest request,HttpServletResponse response) throws IOException, InterruptedException, ExecutionException {
+         // System.out.println("mmm");
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "*");
+		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+		String encodedString =null;
+		long p = Long.parseLong(qparam);
+			if(p !=942109925) {
+
+				return "";
+			}
+				else {
+					
+					  ByteArrayInputStream in = new ByteArrayInputStream(file.getBytes());
+					  XWPFDocument document = new XWPFDocument(in);
+					  PdfOptions options = PdfOptions.create();
+					  ByteArrayOutputStream out = new ByteArrayOutputStream();
+					  PdfConverter.getInstance().convert(document, out, options);
+			          byte[] b = ((ByteArrayOutputStream) out).toByteArray();
+			          encodedString = Base64.getEncoder().encodeToString(b);
+			        
+			    }
+		
+					
+				    
+			
+	      
+	
+			return encodedString;
+}
+
+	}
+	
+	
+	@RequestMapping(value="/wordtopdf",method = RequestMethod.POST)
+	public String word2pdf(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam,
+			HttpServletRequest request,HttpServletResponse response) throws IOException, InterruptedException, ExecutionException {
+         // System.out.println("mmm");
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "*");
+		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+		String encodedString =null;
+		long p = Long.parseLong(qparam);
+			if(p !=942109925) {
+
+				return "";
+			}
+				else {
+					
+					  ByteArrayInputStream in = new ByteArrayInputStream(file.getBytes());
+					  XWPFDocument document = new XWPFDocument(in);
+					  PdfOptions options = PdfOptions.create();
+					  ByteArrayOutputStream out = new ByteArrayOutputStream();
+					  PdfConverter.getInstance().convert(document, out, options);
+			          byte[] b = ((ByteArrayOutputStream) out).toByteArray();
+			          encodedString = Base64.getEncoder().encodeToString(b);
+			        
+			    }
+		
+					
+				    
+			
+	      
+	
+			return encodedString;
+}
 
 	}
 

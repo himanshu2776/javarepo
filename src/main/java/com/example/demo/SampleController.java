@@ -1,5 +1,6 @@
 package com.example.demo;
 
+
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -14,10 +15,10 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -44,12 +45,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
@@ -64,8 +63,6 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.xwpf.converter.pdf.PdfConverter;
-import org.apache.poi.xwpf.converter.pdf.PdfOptions;
 import org.apache.poi.xwpf.converter.xhtml.XHTMLConverter;
 import org.apache.poi.xwpf.converter.xhtml.XHTMLOptions;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -81,6 +78,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -89,11 +90,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 import com.thedeanda.lorem.LoremIpsum;
 
 
 @RestController
 public class SampleController {
+	
+	long i=0;
 	
 	@RequestMapping("/healthview")
 	public String healthCheck() {
@@ -101,46 +107,99 @@ public class SampleController {
 	}
 	
 	@RequestMapping(value="/json2xml",method = RequestMethod.POST)
-	public String a(@RequestBody String json, HttpServletResponse response) throws IOException {
+	public String a(@RequestBody String json,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException, ParserConfigurationException, SAXException, TransformerException, ClassNotFoundException, InstantiationException, IllegalAccessException, ClassCastException {
+		
+		
+		String str = null;
+		 String xml =null;
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
-		String xml = convert(json, "root"); // This method converts json object to xml string
+		 xml = convert(json, "root"); // This method converts json object to xml string
 		// System.out.println(xml);
+		
+		//System.out.println(xml);
+	
 
-		Document xmlDoc = null;
-		String formattedXML = "";
-		try {
-			xmlDoc = toXmlDocument(xml);
-			formattedXML = prettyPrint(xmlDoc);
-		} catch (ParserConfigurationException | SAXException | IOException | TransformerException e) {
-			e.printStackTrace();
-		}
+       try {
+            final InputSource src = new InputSource(new StringReader(xml));
+            final Node document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(src).getDocumentElement();
+            final Boolean keepDeclaration = Boolean.valueOf(xml.startsWith("<?xml"));
 
-		// Print the masked XML
-		// System.out.println("\nXML after formatting : \n" + "<?xml version=\"1.0\"
-		// encoding=\"UTF-8\"?>" +"\n"+ formattedXML);
-		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + formattedXML;
+        //May need this: System.setProperty(DOMImplementationRegistry.PROPERTY,"com.sun.org.apache.xerces.internal.dom.DOMImplementationSourceImpl");
+
+
+            final DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+            final DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
+            final LSSerializer writer = impl.createLSSerializer();
+
+            writer.getDomConfig().setParameter("format-pretty-print", Boolean.TRUE); // Set this to true if the output needs to be beautified.
+            writer.getDomConfig().setParameter("xml-declaration", keepDeclaration); // Set this to true if the declaration is needed to be outputted.
+
+             str =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" +writer.writeToString(document);
+
+            return str;
+       } catch(Exception e) {
+    	   String ff = "<root>"+xml+"</root>";
+    	 //  System.out.println("oooooooooooooooooooooooooo");
+    	 //  System.out.println(ff);
+    	   final InputSource src = new InputSource(new StringReader(ff));
+           final Node document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(src).getDocumentElement();
+           final Boolean keepDeclaration = Boolean.valueOf(xml.startsWith("<?xml"));
+
+       //May need this: System.setProperty(DOMImplementationRegistry.PROPERTY,"com.sun.org.apache.xerces.internal.dom.DOMImplementationSourceImpl");
+
+
+           final DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+           final DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
+           final LSSerializer writer = impl.createLSSerializer();
+
+           writer.getDomConfig().setParameter("format-pretty-print", Boolean.TRUE); // Set this to true if the output needs to be beautified.
+           writer.getDomConfig().setParameter("xml-declaration", keepDeclaration); // Set this to true if the declaration is needed to be outputted.
+    	   
+    	  str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" +writer.writeToString(document);
+    	 // System.out.println(str);
+       }
+      
+    
+		
+
+		
+			
+				
 	}
-
-	private static String prettyPrint(Document document) throws TransformerException {
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		Transformer transformer = transformerFactory.newTransformer();
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-		DOMSource source = new DOMSource(document);
-		StringWriter strWriter = new StringWriter();
-		StreamResult result = new StreamResult(strWriter);
-
-		transformer.transform(source, result);
-
-		return strWriter.getBuffer().toString();
-
+			return str;
+			
+					
+			
 	}
+	
 
+	/*
+	 * private static String prettyPrint(Document document) throws
+	 * TransformerException { TransformerFactory transformerFactory =
+	 * TransformerFactory.newInstance(); Transformer transformer =
+	 * transformerFactory.newTransformer();
+	 * transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	 * transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",
+	 * "2"); transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+	 * DOMSource source = new DOMSource(document); StringWriter strWriter = new
+	 * StringWriter(); StreamResult result = new StreamResult(strWriter);
+	 * 
+	 * transformer.transform(source, result);
+	 * 
+	 * return strWriter.getBuffer().toString();
+	 * 
+	 * }
+	 */
 	private static Document toXmlDocument(String str) throws ParserConfigurationException, SAXException, IOException {
 
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -152,19 +211,27 @@ public class SampleController {
 
 	public static String convert(String json, String root) throws JSONException {
 		JSONObject jsonObject = new JSONObject(json);
-		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + XML.toString(jsonObject);
+		String xml = XML.toString(jsonObject);
 
 		return xml;
 	}
 
 	@RequestMapping(value="/xmltojson",method = RequestMethod.POST)
-	public String b(@RequestBody String xml, HttpServletResponse response) throws IOException {
+	public String b(@RequestBody String xml, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
+
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
-		String soapmessageString = xml;
-		JSONObject soapDatainJsonObject = XML.toJSONObject(soapmessageString);
+
+		JSONObject soapDatainJsonObject = XML.toJSONObject(xml);
 
 		ObjectMapper mapper = new ObjectMapper();
 		Object json = mapper.readValue(soapDatainJsonObject.toString(), Object.class);
@@ -172,13 +239,20 @@ public class SampleController {
 
 		// Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		// String jsonOutput = gson.toJson(soapDatainJsonObject);
-		System.out.println(indented);
+		//System.out.println(indented);
 
 		return indented;
+				}
 	}
 
-	@RequestMapping(value="/strreverse",method = RequestMethod.POST)
-	public String c(@RequestBody String str, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/strreverse",method = RequestMethod.POST)
+	public String c(@RequestBody String str,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
@@ -190,10 +264,16 @@ public class SampleController {
 		return str1;
 
 	}
-
-	@RequestMapping(value="/randomstr",method = RequestMethod.POST)
-	public String d(@RequestBody String num, HttpServletResponse response) throws IOException {
+	} */
+	/*@RequestMapping(value="/randomstr",method = RequestMethod.POST)
+	public String d(@RequestBody String num, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 		int n = Integer.parseInt(num);
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
@@ -219,29 +299,44 @@ public class SampleController {
 
 			return sb.toString();
 		}
-
-	}
+				}
+	} */
 
 	@RequestMapping(value="/webtoip",method = RequestMethod.POST)
-	public String e(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String e(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		InetAddress ip = null;
 
 		ip = InetAddress.getByName(new URL(s).getHost());
 
-		return "Public IP address of : " + ip.getHostAddress();
+		return "Public IP address of "+s+":" + ip.getHostAddress();
 
-	}
+	}}
 
-	@RequestMapping(value="/sqrt",method = RequestMethod.POST)
-	public Double f(@RequestBody String s, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/sqrt",method = RequestMethod.POST)
+	public Double f(@RequestBody String s, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return 0.0;
+			}
+				else {
+
 		double n = Integer.parseInt(s);
 		Double d = null;
 		try {
@@ -251,9 +346,10 @@ public class SampleController {
 		}
 		return d;
 	}
+	}*/
 
 	@RequestMapping(value="/randomnum",method = RequestMethod.POST)
-	public Integer g(@RequestBody String s, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
+	public Integer g(@RequestBody String s, @RequestParam(required = false) String qparam,@RequestParam(required = false) String qparam1,HttpServletResponse response) throws IOException {
 
 		int first = Integer.parseInt(s);
 		int second = Integer.parseInt(qparam);
@@ -261,6 +357,14 @@ public class SampleController {
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam1);
+			if(i !=942109925) {
+
+				return 0;
+			}
+				else {
+
 		Double k = null;
 		Random rand = new Random();
 		
@@ -268,30 +372,48 @@ public class SampleController {
 		int high = second;
 		int result = rand.nextInt(high-low) + low;
 
-		
+		System.out.println(result);
 
 		return result;
+				}
 
 	}
 
-	@RequestMapping(value="/encoder",method = RequestMethod.POST)
-	public String h(@RequestBody String s, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/encoder",method = RequestMethod.POST)
+	public String h(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		// Encode into Base64 format
 		String BasicBase64format = Base64.getEncoder().encodeToString(s.getBytes());
 		return BasicBase64format;
 	}
+	}
 
 	@RequestMapping(value="/decoder",method = RequestMethod.POST)
-	public String j(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String j(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		// Encode into Base64 format
 		Base64.Decoder decoder = Base64.getDecoder();
@@ -299,25 +421,42 @@ public class SampleController {
 		String dStr = new String(decoder.decode(s));
 		return dStr;
 	}
-
+	}
 	@RequestMapping(value="/circlearea",method = RequestMethod.POST)
-	public Double k(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public Double k(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return 0.0;
+			}
+				else {
+
 		double n = Double.parseDouble(s);
 		Double a = 3.14 * n * n;
 		return a;
-	}
+				}
+	} */
 
 	@RequestMapping(value="/pngtojpeg",method = RequestMethod.POST)
-	public String l(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response)
+	public String l(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(required = false) String qparam,HttpServletResponse response)
 			throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		BufferedImage image = ImageIO.read(file.getInputStream());
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -331,15 +470,23 @@ public class SampleController {
 		String encodedString = Base64.getEncoder().encodeToString(bytearr);
 		return encodedString;
 
-	}
+	}}
 
-	@RequestMapping(value="/pngtobmp",method = RequestMethod.POST)
-	public String m(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response)
+	/*@RequestMapping(value="/pngtobmp",method = RequestMethod.POST)
+	public String m(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(required = false) String qparam,HttpServletResponse response)
 			throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		BufferedImage imag = ImageIO.read(file.getInputStream());
 		BufferedImage bmpImg = new BufferedImage(imag.getWidth(), imag.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -353,15 +500,23 @@ public class SampleController {
 
 		return base64String;
 
-	}
+	}} */
 
-	@RequestMapping(value="/pngtogif",method = RequestMethod.POST)
-	public String n(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response)
+	/*@RequestMapping(value="/pngtogif",method = RequestMethod.POST)
+	public String n(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam, HttpServletResponse response)
 			throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		BufferedImage imag = ImageIO.read(file.getInputStream());
 		BufferedImage bmpImg = new BufferedImage(imag.getWidth(), imag.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -375,15 +530,23 @@ public class SampleController {
 
 		return base64String;
 
-	}
+	}} */
 
-	@RequestMapping(value="/giftopng",method = RequestMethod.POST)
-	public String o(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response)
+	/*@RequestMapping(value="/giftopng",method = RequestMethod.POST)
+	public String o(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam, HttpServletResponse response)
 			throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		BufferedImage imag = ImageIO.read(file.getInputStream());
 		BufferedImage bmpImg = new BufferedImage(imag.getWidth(), imag.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -397,11 +560,19 @@ public class SampleController {
 
 		return base64String;
 
-	}
+	}} 
 
 	@RequestMapping(value="/dectobinary",method = RequestMethod.POST)
-	public String p(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String p(@RequestBody String n,@RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 		int nv = Integer.parseInt(n);
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
@@ -411,12 +582,20 @@ public class SampleController {
 
 		return str;
 
-	}
+	}}
 
 	@RequestMapping(value="/dectooct",method = RequestMethod.POST)
-	public String q(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String q(@RequestBody String n, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		int nv = Integer.parseInt(n);
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
@@ -425,129 +604,209 @@ public class SampleController {
 		return str;
 
 	}
-
+	}
 	@RequestMapping(value="/bintodec",method = RequestMethod.POST)
-	public Integer r(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public Integer r(@RequestBody String n, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
-		Integer i = Integer.parseInt(n, 2);
-		return i;
+				return 0;
+			}
+				else {
 
-	}
+
+		Integer ii = Integer.parseInt(n, 2);
+		return ii;
+
+	}}
 
 	@RequestMapping(value="/bintohex",method = RequestMethod.POST)
-	public String s(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String s(@RequestBody String n, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
-		Integer i = Integer.parseInt(n, 2);
-		String str = Integer.toHexString(i);
+				return "";
+			}
+				else {
+
+
+		Integer ii = Integer.parseInt(n, 2);
+		String str = Integer.toHexString(ii);
 
 		return str;
-
+				}
 	}
 
 	@RequestMapping(value="/bintooctal",method = RequestMethod.POST)
-	public String t(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String t(@RequestBody String n, @RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		Integer i = Integer.parseInt(n, 2);
 		String str = Integer.toOctalString(i);
 
 		return str;
+				}
 
 	}
 
 	@RequestMapping(value="/hextodec",method = RequestMethod.POST)
-	public Integer u(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public Integer u(@RequestBody String n,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return 0;
+			}
+				else {
+
 
 		Integer num = Integer.parseInt(n, 16);
 		return num;
 
 	}
-
+	}
 	@RequestMapping(value="/hextobin",method = RequestMethod.POST)
-	public String v(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String v(@RequestBody String n, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		Integer num = Integer.parseInt(n, 16);
 		String str = Integer.toBinaryString(num);
 		return str;
+				}
 
 	}
 
 	@RequestMapping(value="/hextooct",method = RequestMethod.POST)
-	public String w(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String w(@RequestBody String n,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		Integer num = Integer.parseInt(n, 16);
 		String str = Integer.toOctalString(num);
 		return str;
+		
+				}
 
 	}
 
 	@RequestMapping(value="/octtodec",method = RequestMethod.POST)
-	public Integer x(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public Integer x(@RequestBody String n,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return 0;
+			}
+				else {
+
 
 		int num = Integer.parseInt(n, 8);
 		return num;
 
-	}
+	}}
 
 	@RequestMapping(value="/octtobinary",method = RequestMethod.POST)
-	public String y(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String y(@RequestBody String n, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		int num = Integer.parseInt(n, 8);
 		String str = Integer.toBinaryString(num);
 		return str;
-
+				}
 	}
 
 	@RequestMapping(value="/octtohex",method = RequestMethod.POST)
-	public String z(@RequestBody String n, HttpServletResponse response) throws IOException {
+	public String z(@RequestBody String n,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String str1 = Long.toHexString(Long.parseLong(n, 8));
 
 		return str1;
+				}
+	} */
 
-	}
-
-	@RequestMapping(value="/passgen",method = RequestMethod.POST)
-	public String randomwords(@RequestBody String nn, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/passgen",method = RequestMethod.POST)
+	public String randomwords(@RequestBody String nn, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 		Integer len = Integer.parseInt(nn);
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String Capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		String Small_chars = "abcdefghijklmnopqrstuvwxyz";
@@ -567,29 +826,46 @@ public class SampleController {
 
 		}
 		String str = new String(password);
-		System.out.println(str);
+		//System.out.println(str);
 
 		return str;
+				}
 	}
 
 	@RequestMapping(value="/numtoword",method = RequestMethod.POST)
-	public String numtoword(@RequestBody String nn, HttpServletResponse response) throws IOException {
+	public String numtoword(@RequestBody String nn,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 		
 		Integer yy = Integer.parseInt(nn);
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String str = SampleController.convert(yy);
 		return str;
-	}
+	}}
 
 	@RequestMapping(value="/wordcounter",method = RequestMethod.POST)
-	public Integer wordcounter(@RequestBody String input, HttpServletResponse response) throws IOException {
+	public Integer wordcounter(@RequestBody String input,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return 0;
+			}
+				else {
+
 
 		if (input == null || input.isEmpty()) {
 			return 0;
@@ -599,48 +875,82 @@ public class SampleController {
 
 		return words.length;
 	}
+	}
 
 	@RequestMapping(value="/encodeurl",method = RequestMethod.POST)
-	public String encodeurl(@RequestBody String input, HttpServletResponse response) throws IOException {
+	public String encodeurl(@RequestBody String input,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String encodeURL = URLEncoder.encode(input, "UTF-8");
 		return encodeURL;
 
-	}
+	}}
 
 	@RequestMapping(value="/decodeurl",method = RequestMethod.POST)
-	public String decodeurl(@RequestBody String input, HttpServletResponse response) throws IOException {
+	public String decodeurl(@RequestBody String input, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String decodeURL = URLDecoder.decode(input, "UTF-8");
 		return decodeURL;
 
-	}
+	}}  */
 
-	@RequestMapping(value="/texttohex",method = RequestMethod.POST)
-	public String texttohex(@RequestBody String input, HttpServletResponse response) throws IOException {
-
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "*");
-		response.addHeader("Access-Control-Allow-Headers", "*");
-
-		return String.format("%040x", new BigInteger(1, input.getBytes(/* YOUR_CHARSET? */)));
-
-	}
-
-	@RequestMapping(value="/hextotext",method = RequestMethod.POST)
-	public String hextotext(@RequestBody String hex, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/texttohex",method = RequestMethod.POST)
+	public String texttohex(@RequestBody String input, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {   */
+
+
+//	return String.format("%040x", new BigInteger(1, input.getBytes(/* YOUR_CHARSET? */))); 
+
+	//}  
+//}       
+
+/*	@RequestMapping(value="/hextotext",method = RequestMethod.POST)
+	public String hextotext(@RequestBody String hex,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
+
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "*");
+		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		hex = hex.replaceAll("^(00)+", "");
 		byte[] bytes = new byte[hex.length() / 2];
@@ -649,14 +959,22 @@ public class SampleController {
 		}
 		return new String(bytes);
 
-	}
+	}}
 
 	@RequestMapping(value="/strtobinary",method = RequestMethod.POST)
-	public String strtobinary(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String strtobinary(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		byte[] bytes = s.getBytes();
 		StringBuilder binary = new StringBuilder();
@@ -668,17 +986,25 @@ public class SampleController {
 			}
 			binary.append(' ');
 		}
-		System.out.println(binary.toString());
+		//System.out.println(binary.toString());
 		return binary.toString();
-
+				}
 	}
 
 	@RequestMapping(value="/bintostr",method = RequestMethod.POST)
-	public String bintostr(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String bintostr(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String[] singleBinaryArray = s.toString().split("\\s");
 		String finalResult = "";
@@ -689,14 +1015,23 @@ public class SampleController {
 		System.out.println("String " + finalResult);
 		return finalResult;
 
-	}
-
+	}}
+	
+	
 	@RequestMapping(value="/removeacc",method = RequestMethod.POST)
-	public String removeacc(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String removeacc(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		// String s = "È,É,Ê,Ë,Û,Ù,Ï,Î,À,Â,Ô,è,é,ê,ë,û,ù,ï,î,à,â,ô";
 
@@ -713,15 +1048,24 @@ public class SampleController {
 		s = s.replaceAll("Ô", "O");
 
 		return s;
+		
+				}
 
-	}
+	}  */
 
 	@RequestMapping(value="/removeduplines",method = RequestMethod.POST)
-	public String removeduplines(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String removeduplines(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		String[] tokens = s.split("\n");
 		StringBuilder resultBuilder = new StringBuilder();
@@ -746,43 +1090,70 @@ public class SampleController {
 
 		return result;
 
-	}
+	}}
 
 	@RequestMapping(value="/removeemplines",method = RequestMethod.POST)
-	public String removeemplines(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String removeemplines(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String text = s;
 		String adjusted = text.replaceAll("(?m)^[ \t]*\r?\n", "");
 
 		return adjusted;
+				}
 
 	}
 
-	@RequestMapping(value="/removespaces",method = RequestMethod.POST)
-	public String removespaces(@RequestBody String s, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/removespaces",method = RequestMethod.POST)
+	public String removespaces(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String str = s;
 		String str1 = str.replaceAll("\\s+", " ").trim();
 
 		return str1;
+		
+				}
 
 	}
 
 	@RequestMapping(value="/removeline",method = RequestMethod.POST)
-	public String removeline(@RequestBody String s, @RequestParam(required = false) String a,
+	public String removeline(@RequestBody String s,@RequestParam(required = false) String qparam, @RequestParam(required = false) String a,
 			HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		Scanner sc = new Scanner(s);
 		String str = null;
@@ -804,15 +1175,24 @@ public class SampleController {
 
 		}
 		return joiner.toString();
+				}
 
-	}
+	}  */
 
 	@RequestMapping(value="/sortline",method = RequestMethod.POST)
-	public String sortline(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String sortline(@RequestBody String s, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		StringJoiner joiner = new StringJoiner("\n");
 		String inputLine;
@@ -832,105 +1212,160 @@ public class SampleController {
 
 		}
 		return joiner.toString();
+				}
 
 	}
 
 	@RequestMapping(value="/sortrevline",method = RequestMethod.POST)
-	public String sortrevline(@RequestBody String s, HttpServletResponse response) throws IOException {
-
+	public List sortrevline(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
+		 ArrayList<String> lines = new ArrayList<String>();
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		List list = new ArrayList();
+		String str = null;
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
 
-		StringJoiner joiner = new StringJoiner("\n");
-		String inputLine;
-		List<String> lineList = new ArrayList<String>();
-		Scanner sc = new Scanner(s);
-		while (sc.hasNext()) {
-			inputLine = sc.nextLine();
-			lineList.add(inputLine);
-		}
+				return (List) list.get(100000);
+			}
+				else {
+					
+					  Scanner in = new Scanner(s);
+					    while (in.hasNext()) {
+					        lines.add(in.nextLine());
+					    }
 
-		Collections.sort(lineList);
-		String out = null;
-		Collections.reverse(lineList);
-
-		for (String outputLine : lineList) {
-			out = outputLine;
-			joiner.add(out);
-
-		}
-
-		return joiner.toString();
-
+					    in.close();
+					    for (int i = lines.size() - 1; i >= 0; i--) {
+					       // System.out.println(lines.get(i));
+					        str = lines.get(i);
+					       // System.out.println(lines.get(i));
+                            list.add(str);       
 	}
-	
+				}
+			
+			return list;
+	}
 	
 	
 	
 	
 	
 	@RequestMapping(value="/loremipsum",method = RequestMethod.POST)
-	public String loremipsum(@RequestBody String s,HttpServletResponse response) throws IOException {
+	public String loremipsum(@RequestBody String s,@RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
         int u = Integer.parseInt(s);
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		LoremIpsum ipsum = new LoremIpsum();
 		String words = ipsum.getParagraphs(2,u);
 		String str = ipsum.getFirstNameMale();
 		
-		 System.out.println(words);
+		 //System.out.println(words);
 		return words;
+				}
 
 	}
 
 	@RequestMapping(value="/iptohost",method = RequestMethod.POST)
-	public String iptohost(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public String iptohost(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		InetAddress addr = InetAddress.getByName(s);
 		return addr.getHostName();
+				}
 	}
 
+	@SuppressWarnings("resource")
 	@RequestMapping(value="/portcheck",method = RequestMethod.POST)
-	public String portcheck(@RequestBody String s, @RequestParam(required = false) String qparam,
-			HttpServletResponse response) throws IOException {
-		int i = Integer.parseInt(qparam);
+	public String portcheck(@RequestBody String ss, @RequestParam(required = false) String qparam,@RequestParam(required = false) String qparam1,
+			HttpServletResponse response) throws IOException, InterruptedException {
+		
+		int ii = Integer.parseInt(qparam);
+
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
-		InetAddress ip = null;
-		ip = InetAddress.getByName(new URL(s).getHost());
-		boolean result = false;
+		
+		 i = Long.parseLong(qparam1);
+		 
+			if(i !=942109925) {
 
-		try {
-			(new Socket(ip, i)).isBound();
-			result = true;
-
-		} catch (SocketException e) {
-			// Could not connect.
-		}
-		System.out.println(result);
-		if (result == true) {
-			return "closed";
-		} else {
-			return "open";
-		}
-
+				return "";
+			}
+				else {
+					String host = null;
+					  Socket Skt;
+					  if(ss.equals("localhost") || ss.equals("127.0.0.1")) {
+				      host = "localhost";
+					       
+				        
+				      try {
+					      
+				         Skt = new Socket(host, ii);
+				         return "Closed";
+				         }
+				      
+				         catch (UnknownHostException e) {
+				        	 return "Closed";
+				         
+				          
+				         } catch (IOException e) {
+				        	return "Open";
+				         }
+				      
+				      
+				        	
+				         }	
+					  
+					  else {
+						  Thread.sleep(100);
+						  return "Closed";
+					  }
+					  
+					  
+					
+				}
+			
+		
 	}
 
-	@RequestMapping(value="/jsonescape",method = RequestMethod.POST)
-	public String jsonescape(@RequestBody String s, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/jsonescape",method = RequestMethod.POST)
+	public String jsonescape(@RequestBody String s,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		String jsonified = null;
 		try {
@@ -942,15 +1377,24 @@ public class SampleController {
 			e.printStackTrace();
 		}
 		return jsonified;
+				}
 
-	}
+	} */
 
 	@RequestMapping(value="/unjsonescape",method = RequestMethod.POST)
-	public String unjsonescape(@RequestBody String input, HttpServletResponse response) throws IOException {
+	public String unjsonescape(@RequestBody String input,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		StringBuilder builder = new StringBuilder();
 
@@ -1003,16 +1447,25 @@ public class SampleController {
 			}
 		}
 		return builder.toString();
+				}
 
 	}
 
-	@RequestMapping(value="/wordtohtml",method = RequestMethod.POST)
-	public String wordtohtml(@RequestParam(value = "file", required = false) MultipartFile file,
+	/*@RequestMapping(value="/wordtohtml",method = RequestMethod.POST)
+	public String wordtohtml(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam,
 			HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 
 		XWPFDocument document = new XWPFDocument(file.getInputStream());
 		XHTMLOptions options = XHTMLOptions.create();
@@ -1023,35 +1476,25 @@ public class SampleController {
 		String encodedString = Base64.getEncoder().encodeToString(bytes);
 
 		return encodedString;
+				}
 
 	}
 
-	@RequestMapping(value="/wordtopdf",method = RequestMethod.POST)
-	public String wordtopdf(@RequestParam(value = "file", required = false) MultipartFile file,
-			HttpServletResponse response) throws IOException {
-
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "*");
-		response.addHeader("Access-Control-Allow-Headers", "*");
-
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		XWPFDocument document = new XWPFDocument(file.getInputStream());
-		PdfOptions options = PdfOptions.create();
-		PdfConverter.getInstance().convert(document, out, options);
-		final byte[] bytes = out.toByteArray();
-		String encodedString = Base64.getEncoder().encodeToString(bytes);
-
-		return encodedString;
-
-	}
+	
 
 	@RequestMapping(value="/jsontoyaml",method = RequestMethod.POST)
-	public String jsontoyaml(@RequestBody String input, HttpServletResponse response) throws IOException {
+	public String jsontoyaml(@RequestBody String input,@RequestParam(required = false) String qparam, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
 
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -1064,13 +1507,21 @@ public class SampleController {
 		String yaml = new YAMLMapper().writeValueAsString(jsonNode);
 		return yaml;
 	}
-
+	}  */
 	@RequestMapping(value="/csvtojson",method = RequestMethod.POST)
-	public String csvtojson(@RequestBody String file, HttpServletResponse response) throws IOException {
+	public String csvtojson(@RequestBody String file, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 		// File input = new File("input.csv");
 	        File output = new File("output.json");
 	 
@@ -1087,14 +1538,22 @@ public class SampleController {
 
 	      return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(readAll);
 	     
-	}
+	}}
 	
-	@RequestMapping(value="/xmltoxsl",method = RequestMethod.POST)
-	public String jsontohtml(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(value = "file1", required = false) MultipartFile file1, HttpServletResponse response) throws IOException, TransformerException {
+	/*@RequestMapping(value="/xmltoxsl",method = RequestMethod.POST)
+	public String jsontohtml(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(value = "file1", required = false) MultipartFile file1, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException, TransformerException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 	//	System.out.println(file.getSize());
 	//	System.out.println(file1.getSize());
 		
@@ -1115,11 +1574,19 @@ public class SampleController {
 	  //    System.out.println(strResult);
 	  	
 	      return strResult;
+				}
 	     
-	}
+	}  */
 	
 	@RequestMapping(value="/xmltoyaml",method = RequestMethod.POST)
-	public String xmltoyaml(@RequestBody String file, HttpServletResponse response) throws IOException {
+	public String xmltoyaml(@RequestBody String file,@RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
+    
+		 i = Long.parseLong(qparam);
+		if(i !=942109925) {
+
+			return "";
+		}
+			else {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
@@ -1134,14 +1601,26 @@ public class SampleController {
 		String yaml = new YAMLMapper().writeValueAsString(jsonNode);
 	    
 	     return yaml;
+		} 
+		
+	
+		
 	}
 	
-	@RequestMapping(value="/jsontocsv",method = RequestMethod.POST)
-	public String jsontocsv(@RequestBody String f, @RequestParam(required = false) String arrname, HttpServletResponse response) throws IOException {
+	/*@RequestMapping(value="/jsontocsv",method = RequestMethod.POST)
+	public String jsontocsv(@RequestBody String f, @RequestParam(required = false) String qparam,@RequestParam(required = false) String arrname, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 		String csv = null;
 	      JSONObject output;
 	      try {
@@ -1155,16 +1634,25 @@ public class SampleController {
 	         e.printStackTrace();
 	      }
 		return csv;
+				}
 	     
 	}
 	
 	
 	@RequestMapping(value="/jsontotsv",method = RequestMethod.POST)
-	public String jsontotsv(@RequestBody String f, @RequestParam(required = false) String arrname, HttpServletResponse response) throws IOException {
+	public String jsontotsv(@RequestBody String f,@RequestParam(required = false) String qparam, @RequestParam(required = false) String arrname, HttpServletResponse response) throws IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 	
 		String csv = null;
 	      JSONObject output;
@@ -1180,15 +1668,24 @@ public class SampleController {
 	      }
 	      String tsvformatted = csv.replace(",", "  ");
 		return tsvformatted;
+				}
 }
 	
 	@RequestMapping(value="/csvtotsv",method = RequestMethod.POST)
-	public String csvtotsv(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException {
+	public String csvtotsv(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 		String xx=null;
 		ArrayList list = new ArrayList();
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 	
 		String csvFile = "/Users/mkyong/csv/country.csv";
         BufferedReader br = null;
@@ -1222,9 +1719,12 @@ public class SampleController {
             }
         }
 		return list.toString();
+				}
 		
-}
-	@RequestMapping(value="/csvtoxls",method = RequestMethod.POST)
+}  */
+
+	
+	/*@RequestMapping(value="/csvtoxls",method = RequestMethod.POST)
 	public String csvtoxls(@RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException, TransformerException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
@@ -1280,36 +1780,44 @@ public class SampleController {
 	                        data=data.replaceAll("\"", "");
 	                        cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 	                        cell.setCellValue(data);
-	                    }
+	                    } */
 	                    //*/
 	                    // cell.setCellValue(ardata.get(p).toString());
-	                }
-	                System.out.println();
-	            }
-	            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+	             //   } 
+	            //    System.out.println();
+	          //  }
+	        //    ByteArrayOutputStream stream = new ByteArrayOutputStream();
 	            
-	            hwb.write(stream);
+	        //    hwb.write(stream);
 
 	          //  String finalString = new String(stream.toByteArray());
-	            final byte[] bytes = stream.toByteArray();
-	    		 encodedString = Base64.getEncoder().encodeToString(bytes);
+	        //    final byte[] bytes = stream.toByteArray();
+	    	//	 encodedString = Base64.getEncoder().encodeToString(bytes);   
 
-	        } catch ( Exception ex ) {
-	            ex.printStackTrace();
-	        } //main method ends
-	    }
-		return encodedString;
+	      //  } catch ( Exception ex ) {
+	      //      ex.printStackTrace();
+	      //  } //main method ends
+	 //   }
+	//	return encodedString;
 	     
-	}
+//	}
 	
 	@RequestMapping(value="/pngtopdf",method = RequestMethod.POST)
-	public String pngtopdf(@RequestParam(value = "file", required = false) MultipartFile file,
+	public String pngtopdf(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam,
 			HttpServletResponse response) throws IOException {
 
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
+		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 		
 		PDDocument doc = null;
 		doc = new PDDocument();
@@ -1319,7 +1827,7 @@ public class SampleController {
 		  BufferedImage awtImage = ImageIO.read(file.getInputStream());
 		    PDImageXObject  pdImageXObject = LosslessFactory.createFromImage(doc, awtImage);
 		    PDPageContentStream contentStream = new PDPageContentStream(doc, page, true, false);
-		    contentStream.drawImage(pdImageXObject, 200, 300, awtImage.getWidth() / 2, awtImage.getHeight() / 2);
+		    contentStream.drawImage(pdImageXObject, awtImage.getMinX(), awtImage.getMinY(), awtImage.getWidth() / 2, awtImage.getHeight() / 2);
 		    contentStream.close();
 		    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		    doc.save(byteArrayOutputStream);
@@ -1329,11 +1837,11 @@ public class SampleController {
 		   
 
 		return BasicBase64format;
-
+				}
 	}
 	
 	@RequestMapping(value="/datecon",method = RequestMethod.POST)
-	public String datecon(@RequestBody String f, @RequestParam(required = false) String name, HttpServletResponse response) throws IOException, ParseException {
+	public String datecon(@RequestBody String f,@RequestParam(required = false) String qparam, @RequestParam(required = false) String name, HttpServletResponse response) throws IOException, ParseException {
 
 		
 		
@@ -1344,6 +1852,13 @@ public class SampleController {
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return "";
+			}
+				else {
+
 		
 		  DateFormat inputFormat = new SimpleDateFormat(
 		  "E MMM dd yyyy HH:mm:ss 'GMT'z ", Locale.ENGLISH); 
@@ -1375,19 +1890,25 @@ public class SampleController {
 return str;
 			        }
 			        
-			        
+				}       
 		 
 	
 }
 	
 	
 	@RequestMapping(value="/randwordsgen",method = RequestMethod.POST)
-	public List randwordsgen(@RequestBody String s, HttpServletResponse response) throws IOException {
+	public List randwordsgen(@RequestBody String s, @RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
 	int numberOfWords = Integer.parseInt(s);
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "*");
 		response.addHeader("Access-Control-Allow-Headers", "*");
 		
+		 i = Long.parseLong(qparam);
+			if(i !=942109925) {
+
+				return null;
+			}
+				else {
 
 	
 			  List<String> wordList = null;
@@ -1409,6 +1930,7 @@ return str;
 		
 	
 		return wordList;
+				}
 	}
 	
 	
@@ -1541,6 +2063,37 @@ return str;
 		    return result.replaceAll("^\\s+", "").replaceAll("\\b\\s{2,}\\b", " ");
 		  }
 
+		/*  @RequestMapping(value="/findip",method = RequestMethod.POST)
+			public String findip(@RequestParam(required = false) String qparam,HttpServletResponse response) throws IOException {
+            String output = null;
+				response.addHeader("Access-Control-Allow-Origin", "*");
+				response.addHeader("Access-Control-Allow-Methods", "*");
+				response.addHeader("Access-Control-Allow-Headers", "*");
+				
+				 i = Long.parseLong(qparam);
+					if(i !=942109925) {
+
+					
+					}
+						else {
+							Client client = Client.create();
+
+							WebResource webResource = client
+							   .resource("https://freegeoip.app/json/");
+
+							ClientResponse response1 = webResource.accept("application/json")
+					                   .get(ClientResponse.class);
+
+							if (response1.getStatus() != 200) {
+							   throw new RuntimeException("Failed : HTTP error code : "
+								+ response1.getStatus());
+							}
+							 output = response1.getEntity(String.class);  
+						}
+				//System.out.println(output);
+					return output;
+			     
+			}  */
 
 
 }
