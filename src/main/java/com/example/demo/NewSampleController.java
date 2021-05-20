@@ -30,10 +30,6 @@ import fr.opensagres.poi.xwpf.converter.pdf.PdfOptions;
 
 
 
-
-
-
-
 @RestController
 public class NewSampleController {
 	
@@ -372,47 +368,7 @@ public class NewSampleController {
 	}
 	
 	
-	@RequestMapping(value="/wordtopdf",method = RequestMethod.POST)
-	public String word2pdf(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(required = false) String qparam,
-			HttpServletRequest request,HttpServletResponse response) throws IOException, InterruptedException, ExecutionException {
-         // System.out.println("mmm");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "*");
-		response.addHeader("Access-Control-Allow-Headers", "*");
-		 i = Long.parseLong(qparam);
-			if(i !=942109925) {
-
-				return "";
-			}
-				else {
-		String encodedString =null;
-		long p = Long.parseLong(qparam);
-			if(p !=942109925) {
-
-				return "";
-			}
-				else {
-					
-					  ByteArrayInputStream in = new ByteArrayInputStream(file.getBytes());
-					  XWPFDocument document = new XWPFDocument(in);
-					  PdfOptions options = PdfOptions.create();
-					  ByteArrayOutputStream out = new ByteArrayOutputStream();
-					  PdfConverter.getInstance().convert(document, out, options);
-			          byte[] b = ((ByteArrayOutputStream) out).toByteArray();
-			          encodedString = Base64.getEncoder().encodeToString(b);
-			        
-			    }
-		
-					
-				    
-			
-	      
 	
-			return encodedString;
-}
-
-	}
-
 
 
 }
